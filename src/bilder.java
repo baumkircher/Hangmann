@@ -3,21 +3,25 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class bilder {
-    private JButton prevBtn;
     private JPanel mainPanel;
-    private JButton nextBtn;
     private JLabel picLabel;
     private JTextField inputtxt;
     private JButton sucheButton;
     private JLabel wortAnzeigen;
-
+    private JLabel JLabelCount;
+    private JLabel errorCount;
     private int picCounter = 1;
     private final int MAX_FEHLER = 10;
     private String lösungsWortPrivate;
     private char[] aktuellerStand;
+
+    private Set<Character> verwendeteBuchstaben = new HashSet<>();
+    private int errorCountValue = MAX_FEHLER;
 
     public bilder() {
         generiereWort();
@@ -25,15 +29,13 @@ public class bilder {
 
         setHangmanBild(picCounter);
 
-        prevBtn.addActionListener(new ImageChangeBtnClick(-1));
-        nextBtn.addActionListener(new ImageChangeBtnClick(1));
-
         sucheButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 prüfeBuchstabe();
             }
         });
+
     }
 
     private void setHangmanBild(int nummer) {
@@ -49,22 +51,7 @@ public class bilder {
         picLabel.setIcon(new ImageIcon(image));
     }
 
-    private class ImageChangeBtnClick implements ActionListener {
-        private final int direction;
 
-        public ImageChangeBtnClick(int direction) {
-            this.direction = direction;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            picCounter += direction;
-            if (picCounter < 1) picCounter = 10;
-            else if (picCounter > 10) picCounter = 1;
-
-            setHangmanBild(picCounter);
-        }
-    }
 
     private void generiereWort() {
         ArrayList<String> woerter = new ArrayList<>();
@@ -94,11 +81,19 @@ public class bilder {
         }
 
         char buchstabe = eingabe.charAt(0);
+
+        if (verwendeteBuchstaben.contains(buchstabe)) {
+            JOptionPane.showMessageDialog(mainPanel, "Diesen Buchstaben hast du schon verwendet!");
+            return;
+        }
+
+        verwendeteBuchstaben.add(buchstabe);
+
         boolean gefunden = false;
 
         for (int i = 0; i < lösungsWortPrivate.length(); i++) {
             if (lösungsWortPrivate.charAt(i) == buchstabe) {
-                aktuellerStand[i] = buchstabe;  // Buchstabe aufdecken
+                aktuellerStand[i] = buchstabe;
                 gefunden = true;
             }
         }
@@ -115,6 +110,9 @@ public class bilder {
             setHangmanBild(picCounter);
         }
 
+        // Fehleranzahl im Label aktualisieren
+        JLabelCount.setText("Fehler: " + (MAX_FEHLER - picCounter));
+
         if (String.valueOf(aktuellerStand).equals(lösungsWortPrivate)) {
             JOptionPane.showMessageDialog(mainPanel, "Glückwunsch! Du hast das Wort erraten: " + lösungsWortPrivate);
             resetSpiel();
@@ -123,8 +121,10 @@ public class bilder {
         inputtxt.setText("");
     }
 
+
     private void resetSpiel() {
         picCounter = 1;
+        verwendeteBuchstaben.clear();
         generiereWort();
         wortAnzeigen.setText(String.valueOf(aktuellerStand));
         setHangmanBild(picCounter);
